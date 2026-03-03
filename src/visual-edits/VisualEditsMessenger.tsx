@@ -7,6 +7,23 @@ export const CHANNEL = "ORCHIDS_HOVER_v1" as const;
 const VISUAL_EDIT_MODE_KEY = "orchids_visual_edit_mode" as const;
 const FOCUSED_ELEMENT_KEY = "orchids_focused_element" as const;
 
+// Trusted parent origin – resolved once (from document.referrer on init, then
+// locked to e.origin on the first verified message from window.parent).
+// Once resolved beyond "*" the value is never overwritten, so a later parent
+// navigation cannot redirect outgoing messages to an attacker-controlled origin.
+let _orchidsParentOrigin: string = (() => {
+  try {
+    const ref = typeof document !== "undefined" ? document.referrer : "";
+    if (ref) return new URL(ref).origin;
+  } catch { /* fall through */ }
+  return "*";
+})();
+
+/** Call once per verified incoming message to lock the trusted parent origin. */
+function _captureParentOrigin(origin: string) {
+  if (_orchidsParentOrigin === "*") _orchidsParentOrigin = origin;
+}
+
 // Deduplicate helper for high-frequency traffic (HIT / FOCUS_MOVED / SCROLL)
 // -----------------------------------------------------------------------------
 let _orchidsLastMsg = "";
@@ -18,7 +35,7 @@ const postMessageDedup = (data: any) => {
   } catch {
     // if stringify fails, fall through
   }
-  window.parent.postMessage(data, "*");
+  window.parent.postMessage(data, _orchidsParentOrigin);
 };
 
 export type ParentToChild =
@@ -467,13 +484,13 @@ export default function HoverReceiver() {
       // This will sync the parent's state with our restored state
       window.parent.postMessage(
         { type: CHANNEL, msg: "VISUAL_EDIT_MODE_ACK", active: true },
-        "*"
+        _orchidsParentOrigin
       );
 
       // Also send a special message to indicate this was restored from localStorage
       window.parent.postMessage(
         { type: CHANNEL, msg: "VISUAL_EDIT_MODE_RESTORED", active: true },
-        "*"
+        _orchidsParentOrigin
       );
 
       // Restore focused element after a short delay to ensure DOM is ready
@@ -800,6 +817,8 @@ export default function HoverReceiver() {
   // Listen for style and image updates from parent
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
+      if (e.source !== window.parent) return;
+      _captureParentOrigin(e.origin);
       if (e.data?.type === "ORCHIDS_STYLE_UPDATE") {
         const { elementId, styles } = e.data;
 
@@ -1063,7 +1082,7 @@ export default function HoverReceiver() {
             width: Math.round(newWidth),
             height: Math.round(newHeight),
           },
-          "*"
+          _orchidsParentOrigin
         );
       }
     };
@@ -1166,7 +1185,7 @@ export default function HoverReceiver() {
           }
         }
 
-        window.parent.postMessage(msg, "*");
+        window.parent.postMessage(msg, _orchidsParentOrigin);
       }
 
       setIsResizing(false);
@@ -1786,6 +1805,8 @@ export default function HoverReceiver() {
 
     // Handle messages from parent
     function onMsg(e: MessageEvent<ParentToChild>) {
+      if (e.source !== window.parent) return;
+      _captureParentOrigin(e.origin);
       if (e.data?.type !== CHANNEL) return;
 
       // Handle preview font request from parent
@@ -1836,7 +1857,7 @@ export default function HoverReceiver() {
         // Send acknowledgement back to parent so it knows we received the mode change
         window.parent.postMessage(
           { type: CHANNEL, msg: "VISUAL_EDIT_MODE_ACK", active: newMode },
-          "*"
+          _orchidsParentOrigin
         );
 
         if (!newMode) {

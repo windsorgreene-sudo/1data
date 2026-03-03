@@ -16,6 +16,13 @@ const logErrorsPlugin = () => ({
           injectTo: "head",
           children: `(() => {
             try {
+              const _parentOrigin = (() => {
+                try {
+                  const ref = document.referrer;
+                  if (ref) return new URL(ref).origin;
+                } catch (_) {}
+                return '*';
+              })();
               const logOverlay = () => {
                 const el = document.querySelector('vite-error-overlay');
                 if (!el) return;
@@ -40,7 +47,7 @@ const logErrorsPlugin = () => ({
                           source: 'vite.overlay',
                         },
                         timestamp: Date.now(),
-                      }, '*');
+                      }, _parentOrigin);
                     }
                   } catch (_) {}
                 }
