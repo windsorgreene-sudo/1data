@@ -155,8 +155,9 @@ const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
         for (let j = i + 1; j < pts.length; j++) {
           const dx = pts[i].x - pts[j].x;
           const dy = pts[i].y - pts[j].y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < 110) {
+          const distSq = dx * dx + dy * dy;
+          if (distSq < 12100) {
+            const d = Math.sqrt(distSq);
             ctx.beginPath();
             ctx.strokeStyle = `rgba(0,229,255,${(1 - d / 110) * 0.1})`;
             ctx.lineWidth = 0.4;

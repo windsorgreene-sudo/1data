@@ -10,19 +10,26 @@ import SmoothScroll from "./components/SmoothScroll";
 import CursorGlow from "./components/CursorGlow";
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import LoadingScreen from "./components/LoadingScreen";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Pricing from "./pages/Pricing";
-import ContactPage from "./pages/ContactPage";
-import SupportPage from "./pages/SupportPage";
-import TestimonialsPage from "./pages/TestimonialsPage";
 
+const Home = lazy(() => import("./pages/Home"));
+const About = lazy(() => import("./pages/About"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
+const TestimonialsPage = lazy(() => import("./pages/TestimonialsPage"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Portal = lazy(() => import("./pages/Portal"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+      retry: 1,
+    },
+  },
+});
 
 const PageFallback = () => (
   <div className="fixed inset-0 bg-[#07070f] z-[9999] flex items-center justify-center">

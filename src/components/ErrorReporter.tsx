@@ -2,6 +2,15 @@
 
 import { useEffect, useRef } from "react";
 
+const _parentOrigin = (() => {
+  try {
+    if (typeof document !== "undefined" && document.referrer) {
+      return new URL(document.referrer).origin;
+    }
+  } catch { /* fall through */ }
+  return "*";
+})();
+
 type ReporterProps = {
   /*  ⎯⎯ props are only provided on the global-error page ⎯⎯ */
   error?: Error & { digest?: string };
@@ -17,7 +26,7 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
     const inIframe = window.parent !== window;
     if (!inIframe) return;
 
-    const send = (payload: unknown) => window.parent.postMessage(payload, "*");
+    const send = (payload: unknown) => window.parent.postMessage(payload, _parentOrigin);
 
     const onError = (e: ErrorEvent) =>
       send({
@@ -87,7 +96,7 @@ export default function ErrorReporter({ error, reset }: ReporterProps) {
         timestamp: Date.now(),
         userAgent: navigator.userAgent,
       },
-      "*"
+      _parentOrigin
     );
   }, [error]);
 

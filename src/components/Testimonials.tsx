@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight, MessageSquarePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,20 +66,20 @@ const Testimonials = () => {
     });
   };
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % Math.max(1, testimonials.length));
-  };
+  }, [testimonials.length]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + testimonials.length) % Math.max(1, testimonials.length));
-  };
+  }, [testimonials.length]);
 
   // Auto-scroll every 5 seconds
   useEffect(() => {
     if (testimonials.length <= 1) return;
     const interval = setInterval(nextSlide, 5000);
     return () => clearInterval(interval);
-  }, [testimonials.length]);
+  }, [nextSlide]);
 
   const getInitials = (name: string) => {
     return name

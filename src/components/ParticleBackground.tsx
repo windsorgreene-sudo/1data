@@ -71,9 +71,10 @@ const ParticleBackground = () => {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const distSq = dx * dx + dy * dy;
 
-          if (dist < 150) {
+          if (distSq < 22500) {
+            const dist = Math.sqrt(distSq);
             ctx.beginPath();
             ctx.strokeStyle = p.color.replace(')', ` / ${(1 - dist / 150) * 0.2})`);
             ctx.lineWidth = 0.5;

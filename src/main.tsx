@@ -4,10 +4,17 @@ import './index.css'
 import 'lenis/dist/lenis.css'
 
 if (typeof window !== "undefined") {
+  const parentOrigin = (() => {
+    try {
+      const ref = document.referrer;
+      if (ref) return new URL(ref).origin;
+    } catch { /* fall through */ }
+    return "*";
+  })();
   const sendToParent = (data: unknown) => {
     try {
       if (window.parent && window.parent !== window) {
-        window.parent.postMessage(data, "*");
+        window.parent.postMessage(data, parentOrigin);
       }
     } catch (error) {
       // Ignore postMessage errors
