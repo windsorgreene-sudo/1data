@@ -1,0 +1,11 @@
+{
+  "projectId": "76134d2f-a974-4443-91a5-36de69e84413",
+  "createdAt": 1767992220592,
+  "startupCommands": [
+    "bun install; bun run dev"
+  ],
+  "vercelProjectId": "prj_AnZjx3aZT39Cm3KOjQAoaOayWTve",
+  "deployedWithUserToken": false,
+  "templateId": "any",
+  "detectedFramework": "vite"
+}
