@@ -81,18 +81,12 @@ export default defineConfig(({ mode }) => ({
       sourcemap: false,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
-            'vendor-framer': ['framer-motion'],
-            'vendor-ui': [
-              '@radix-ui/react-dialog', 
-              '@radix-ui/react-dropdown-menu', 
-              '@radix-ui/react-accordion',
-              '@radix-ui/react-tabs',
-              'lucide-react'
-            ],
-            'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (id.includes('node_modules/three/') || id.includes('node_modules/@react-three/')) return 'vendor-three';
+            if (id.includes('node_modules/clsx/') || id.includes('node_modules/tailwind-merge/') || id.includes('node_modules/class-variance-authority/')) return 'vendor-utils';
+            if (id.includes('node_modules/framer-motion/') || id.includes('node_modules/@radix-ui/') || id.includes('node_modules/lucide-react/')) return 'vendor-ui';
+            if (id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router') || id.includes('node_modules/react/')) return 'vendor-react';
           },
         },
       },
