@@ -209,10 +209,7 @@
   }
 
   .accent-serif {
-    background: linear-gradient(100deg, hsl(186 100% 66%), hsl(222 100% 70%) 50%, hsl(270 95% 72%));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: hsl(var(--bone) / 0.52);
     padding-right: 0.04em;
     padding-bottom: 0.14em;
     margin-bottom: -0.14em;
@@ -250,7 +247,12 @@
     isolation: isolate;
   }
 
-  .spotlight::before {
+  .tilt-surface {
+    isolation: isolate;
+  }
+
+  .spotlight::before,
+  .tilt-surface::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -272,7 +274,8 @@
     pointer-events: none;
   }
 
-  .spotlight::after {
+  .spotlight::after,
+  .tilt-surface::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -292,6 +295,13 @@
   .spotlight:hover::after,
   .spotlight:focus-within::before,
   .spotlight:focus-within::after {
+    opacity: 1;
+  }
+
+  .tilt-depth:hover > .tilt-surface::before,
+  .tilt-depth:hover > .tilt-surface::after,
+  .tilt-depth:focus-within > .tilt-surface::before,
+  .tilt-depth:focus-within > .tilt-surface::after {
     opacity: 1;
   }
 
@@ -346,7 +356,7 @@
   }
 
   .text-gradient-beam {
-    background: linear-gradient(100deg, hsl(186 100% 66%), hsl(222 100% 70%) 50%, hsl(270 95% 72%));
+    background: linear-gradient(100deg, hsl(186 100% 66%), hsl(212 100% 66%));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

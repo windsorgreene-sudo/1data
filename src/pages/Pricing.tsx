@@ -36,6 +36,7 @@ const Pricing = () => {
         eyebrow="Pricing"
         title={"Every plan.\n*Every price.*"}
         description={`Linux VPS from $${VPS_FROM} and Windows RDP from $${RDP_FROM} a month. Billed monthly, no contract, nothing hidden. Tap order on any row and WhatsApp opens with the plan filled in.`}
+        visual="module"
       />
 
       <section className="relative pb-24 sm:pb-32">

@@ -4,7 +4,7 @@ import { ConsoleShowcase } from "@/components/home/ConsoleShowcase";
 import { StackMarquee } from "@/components/home/StackMarquee";
 import { Fleet } from "@/components/home/Fleet";
 import { Manifesto } from "@/components/home/Manifesto";
-import { UnderTheHood } from "@/components/home/UnderTheHood";
+import { ServerAnatomy } from "@/components/home/ServerAnatomy";
 import { NetworkPreview } from "@/components/home/NetworkPreview";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { PricingPreview } from "@/components/home/PricingPreview";
@@ -22,8 +22,8 @@ const Home = () => {
       <ConsoleShowcase />
       <StackMarquee />
       <Fleet />
+      <ServerAnatomy />
       <Manifesto />
-      <UnderTheHood />
       <NetworkPreview />
       <HowItWorks />
       <PricingPreview />

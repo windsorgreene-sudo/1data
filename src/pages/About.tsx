@@ -103,6 +103,7 @@ const About = () => {
         eyebrow={`About Beam · since ${SITE.founded}`}
         title={"Hosting without\n*the haggling.*"}
         description="Beam started with a simple rule: publish the real price, keep the hardware fast, and answer messages the way a person would. Everything on this site follows from that."
+        visual="lattice"
       />
 
       <section className="relative pb-8">

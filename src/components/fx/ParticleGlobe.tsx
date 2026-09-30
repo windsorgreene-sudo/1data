@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import * as THREE from "three";
+import type { MotionValue } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { isFinePointer, prefersReducedMotion } from "@/lib/motion";
 import type { Location } from "@/lib/locations";
@@ -17,6 +18,8 @@ interface ParticleGlobeProps {
   initialLng?: number;
   initialLat?: number;
   activeCode?: string | null;
+  tilt?: MotionValue<number>;
+  satellites?: boolean;
 }
 
 const DEG = Math.PI / 180;
@@ -158,6 +161,33 @@ void main() {
 }
 `;
 
+const SAT_VERT = `
+uniform float uPixelRatio;
+uniform float uSize;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  gl_PointSize = uSize * uPixelRatio * (6.0 / -mv.z);
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+const SAT_FRAG = `
+uniform vec3 uColor;
+void main() {
+  vec2 c = gl_PointCoord - 0.5;
+  float d = length(c);
+  if (d > 0.5) discard;
+  float glow = pow(smoothstep(0.5, 0.0, d), 1.8);
+  vec3 col = mix(uColor, vec3(1.0), smoothstep(0.18, 0.0, d));
+  gl_FragColor = vec4(col, glow);
+}
+`;
+
+const SAT_TILT = [0.5, -0.9, 1.25];
+const SAT_RADII = [1.32, 1.45, 1.6];
+const SAT_SPEED = [0.35, -0.25, 0.18];
+const SAT_PHASE = [0.4, 2.1, 4.3];
+
 const shortest = (from: number, to: number) => {
   let d = (to - from) % (Math.PI * 2);
   if (d > Math.PI) d -= Math.PI * 2;
@@ -166,7 +196,7 @@ const shortest = (from: number, to: number) => {
 };
 
 export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
-  ({ locations, arcs = NO_ARCS, className, labels = true, initialLng = -30, initialLat = 18, activeCode = null }, ref) => {
+  ({ locations, arcs = NO_ARCS, className, labels = true, initialLng = -30, initialLat = 18, activeCode = null, tilt, satellites = false }, ref) => {
     const wrapRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const labelRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -175,6 +205,9 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
     useImperativeHandle(ref, () => ({
       focus: (lat, lng) => api.current?.focus(lat, lng),
     }));
+
+    const tiltRef = useRef<MotionValue<number> | undefined>(tilt);
+    tiltRef.current = tilt;
 
     const initial = useRef({ lng: initialLng, lat: initialLat });
     const activeRef = useRef(activeCode);
@@ -208,8 +241,11 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
       const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
       camera.position.set(0, 0, 6.9);
 
+      const rig = new THREE.Group();
+      rig.rotation.set(0.12, 0, -0.16);
+      scene.add(rig);
       const globe = new THREE.Group();
-      scene.add(globe);
+      rig.add(globe);
 
       const step = fine ? 1.3 : 1.8;
       const positions: number[] = [];
@@ -269,7 +305,7 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
           },
         }),
       );
-      scene.add(halo);
+      rig.add(halo);
 
       const rim = new THREE.Mesh(
         new THREE.SphereGeometry(R * 1.002, 64, 64),
@@ -376,6 +412,61 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
         globe.add(new THREE.Line(g, m));
       });
 
+      const satGeos: THREE.BufferGeometry[] = [];
+      const satMats: THREE.Material[] = [];
+      const sats: { point: THREE.Points; radius: number; index: number }[] = [];
+      if (satellites) {
+        const ringCount = fine ? 3 : 2;
+        for (let i = 0; i < ringCount; i++) {
+          const radius = R * SAT_RADII[i];
+          const orbit = new THREE.Group();
+          orbit.rotation.set(SAT_TILT[i], i * 0.9, 0);
+          const pts: number[] = [];
+          for (let k = 0; k < 128; k++) {
+            const a = (k / 128) * Math.PI * 2;
+            pts.push(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+          }
+          const ringGeo = new THREE.BufferGeometry();
+          ringGeo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+          const ringMat = new THREE.LineBasicMaterial({
+            color: new THREE.Color("#4de8ff"),
+            transparent: true,
+            opacity: 0.1,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          });
+          orbit.add(new THREE.LineLoop(ringGeo, ringMat));
+          const satGeo = new THREE.BufferGeometry();
+          satGeo.setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0], 3));
+          const satMat = new THREE.ShaderMaterial({
+            vertexShader: SAT_VERT,
+            fragmentShader: SAT_FRAG,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            uniforms: {
+              uPixelRatio: { value: pixelRatio },
+              uSize: { value: 7 },
+              uColor: { value: new THREE.Color(i === 1 ? "#9b6bff" : "#4de8ff") },
+            },
+          });
+          const point = new THREE.Points(satGeo, satMat);
+          orbit.add(point);
+          rig.add(orbit);
+          satGeos.push(ringGeo, satGeo);
+          satMats.push(ringMat, satMat);
+          sats.push({ point, radius, index: i });
+        }
+      }
+
+      const placeSats = (t: number) => {
+        sats.forEach(({ point, radius, index }) => {
+          const a = t * SAT_SPEED[index] + SAT_PHASE[index];
+          point.position.set(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+        });
+      };
+      placeSats(0);
+
       const baseLat = initial.current.lat * DEG * 0.6;
       const baseY = -(initial.current.lng + 90) * DEG;
       const state = {
@@ -465,28 +556,55 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
       const normal = new THREE.Vector3();
       const hubVectors = locations.filter((l) => l.hub && l.code !== "FRA").map((h) => toVec(h.lat, h.lng, R * 1.02));
 
+      const sizes = hubVectors.map(() => ({ w: 0, h: 0 }));
+      const slots = hubVectors.map(() => ({ x: 0, y: 0, facing: 0, alpha: 0 }));
+      const order = hubVectors.map((_, i) => i);
+      const placed: { l: number; t: number; r: number; b: number }[] = [];
+
       const updateLabels = () => {
         if (!labels) return;
         const w = wrap.clientWidth;
         const h = wrap.clientHeight;
         hubVectors.forEach((v, i) => {
-          const el = labelRefs.current[i];
-          if (!el) return;
           world.copy(v).applyMatrix4(globe.matrixWorld);
           normal.copy(world).normalize();
-          const facing = normal.dot(proj.copy(camera.position).normalize());
+          const s = slots[i];
+          s.facing = normal.dot(proj.copy(camera.position).normalize());
           proj.copy(world).project(camera);
-          const x = (proj.x * 0.5 + 0.5) * w;
-          const y = (-proj.y * 0.5 + 0.5) * h;
-          const alpha = Math.max(0, Math.min(1, (facing - 0.25) * 3));
-          el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-          el.style.opacity = alpha.toFixed(2);
+          s.x = (proj.x * 0.5 + 0.5) * w;
+          s.y = (-proj.y * 0.5 + 0.5) * h;
+          s.alpha = Math.max(0, Math.min(1, (s.facing - 0.25) * 3));
         });
+        order.sort((a, b) => slots[b].facing - slots[a].facing);
+        placed.length = 0;
+        for (const i of order) {
+          const el = labelRefs.current[i];
+          if (!el) continue;
+          const size = sizes[i];
+          if (!size.w) {
+            const tag = el.firstElementChild as HTMLElement | null;
+            size.w = tag?.offsetWidth ?? 0;
+            size.h = tag?.offsetHeight ?? 0;
+          }
+          const s = slots[i];
+          let left = s.x;
+          if (left + 10 + size.w > w - 4) left = s.x - size.w - 20;
+          left = Math.max(-8, left);
+          const box = { l: left + 6, t: s.y - 14, r: left + size.w + 14, b: s.y - 6 + size.h };
+          let alpha = s.alpha;
+          if (alpha > 0.05) {
+            if (placed.some((p) => box.l < p.r && box.r > p.l && box.t < p.b && box.b > p.t)) alpha = 0;
+            else placed.push(box);
+          }
+          el.style.transform = `translate3d(${left.toFixed(1)}px, ${s.y.toFixed(1)}px, 0)`;
+          el.style.opacity = alpha.toFixed(2);
+        }
       };
 
       let raf = 0;
       let prev = performance.now();
       const clock = { t: 0 };
+      const satClock = { t: 0 };
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
         const dt = Math.min(0.05, (now - prev) / 1000);
@@ -507,6 +625,17 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
           }
         }
         globe.rotation.set(state.rotX, state.rotY, 0);
+
+        const tv = reduce ? 0.5 : (tiltRef.current?.get() ?? 0.5);
+        rig.rotation.x += (0.12 + (tv - 0.5) * 0.35 - rig.rotation.x) * 0.08;
+        rig.rotation.z += (-0.16 + (tv - 0.5) * 0.12 - rig.rotation.z) * 0.08;
+        camera.position.y += ((0.5 - tv) * 0.6 - camera.position.y) * 0.08;
+        camera.lookAt(0, 0, 0);
+
+        if (sats.length) {
+          if (!reduce) satClock.t += dt;
+          placeSats(satClock.t);
+        }
 
         dotMat.uniforms.uTime.value = clock.t;
         markerMat.uniforms.uTime.value = clock.t;
@@ -536,11 +665,13 @@ export const ParticleGlobe = forwardRef<GlobeHandle, ParticleGlobeProps>(
         (rim.material as THREE.Material).dispose();
         arcGeos.forEach((g) => g.dispose());
         arcMats.forEach((m) => m.dispose());
+        satGeos.forEach((g) => g.dispose());
+        satMats.forEach((m) => m.dispose());
         renderer.dispose();
         renderer.forceContextLoss();
         api.current = undefined;
       };
-    }, [locations, arcs, labels]);
+    }, [locations, arcs, labels, satellites]);
 
     return (
       <div ref={wrapRef} className={cn("relative h-full w-full select-none", className)}>

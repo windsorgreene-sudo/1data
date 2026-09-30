@@ -119,7 +119,7 @@ export const ConsoleShowcase = () => {
   const glow = useTransform(progress, [0, 1], [0, 1]);
 
   return (
-    <section className="relative -mt-24 pb-24 sm:-mt-32 sm:pb-32">
+    <section className="relative pb-24 pt-8 sm:pb-32">
       <div className="shell" style={{ perspective: 1400 }}>
         <motion.div
           ref={ref}

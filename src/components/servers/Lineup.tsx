@@ -1,6 +1,6 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { CATEGORIES, FAMILY_LABEL, minPrice, specRange, type Category } from "@/lib/plans";
@@ -8,7 +8,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Eyebrow } from "@/components/site/SectionIntro";
 import { SplitText } from "@/components/motion/SplitText";
 import { Stagger, StaggerItem } from "@/components/motion/Reveal";
-import { trackPointer } from "@/components/motion/Spotlight";
+import { Tilt, TiltLayer } from "@/components/motion/Tilt";
 
 const HEADLINE: Record<string, { value: string; label: string }> = {
   "cloud-compute": { value: "$9", label: "Lowest monthly price we sell" },
@@ -20,92 +20,137 @@ const HEADLINE: Record<string, { value: string; label: string }> = {
   "storage-optimized": { value: "640 GB", label: "NVMe on the top plan" },
 };
 
-const Panel = ({ c, i, total, className, compact = false }: { c: Category; i: number; total: number; className?: string; compact?: boolean }) => {
+const Panel = ({
+  c,
+  i,
+  total,
+  className,
+  compact = false,
+  horizontal = false,
+}: {
+  c: Category;
+  i: number;
+  total: number;
+  className?: string;
+  compact?: boolean;
+  horizontal?: boolean;
+}) => {
   const s = specRange(c);
   const vps = minPrice(c.plans, "vps");
   const rdp = minPrice(c.plans, "rdp");
   const h = HEADLINE[c.id];
   return (
-    <article
-      onPointerMove={trackPointer}
-      className={cn(
-        "spotlight relative flex flex-col overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-ink-2 p-7 sm:p-8",
-        className,
-      )}
+    <Tilt
+      depth
+      perspective={horizontal ? false : 1100}
+      max={4}
+      className={cn("flex flex-col rounded-[1.6rem] p-7 sm:p-8", className)}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-dots opacity-30 mask-fade-b" />
-      <div className="relative flex items-center justify-between">
-        <span className="font-mono text-[11px] tracking-[0.2em] text-mute">
-          0{i + 1} <span className="text-mute/50">/ 0{total}</span>
-        </span>
-        <span
-          className={cn(
-            "chip",
-            c.family === "dedicated" ? "border-beam/30 text-beam" : "",
-          )}
-        >
-          {FAMILY_LABEL[c.family]}
-        </span>
+      <div
+        aria-hidden
+        className="tilt-surface pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] border border-white/[0.08] bg-ink-2"
+      >
+        <div className="absolute inset-0 bg-dots opacity-30 mask-fade-b" />
       </div>
-
-      <div className={cn("relative", compact ? "mt-6" : "mt-10")}>
-        <p className="display text-[clamp(3rem,5vw,4.6rem)] font-bold leading-none tracking-[-0.06em] text-bone">
-          {h.value}
-        </p>
-        <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-mute">{h.label}</p>
-      </div>
-
-      <div className={cn("relative", compact ? "mt-6" : "mt-10")}>
-        <h3 className="display text-[2rem] font-semibold leading-none tracking-[-0.04em] text-bone">{c.name}</h3>
-        <p className="mt-1.5 text-[14px] text-beam/90">{c.tagline}</p>
-        <p className={cn("mt-4 text-[15px] leading-relaxed text-mute", compact && "hidden")}>{c.description}</p>
-      </div>
-
-      <dl className="relative mt-7 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-white/[0.08] pt-6 text-[14px]">
-        <div>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">vCPU</dt>
-          <dd className="mt-1 text-bone">{s.vcpu}</dd>
-        </div>
-        <div>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Memory</dt>
-          <dd className="mt-1 text-bone">{s.ram} GB</dd>
-        </div>
-        <div>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Storage</dt>
-          <dd className="mt-1 text-bone">
-            {s.storage} GB {s.disk}
-          </dd>
-        </div>
-        <div>
-          <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Transfer</dt>
-          <dd className="mt-1 text-bone">{s.transfer} TB</dd>
-        </div>
-      </dl>
-
-      <div className={cn("relative mt-6 flex flex-wrap gap-2", compact && "hidden")}>
-        {c.bestFor.map((b) => (
-          <span key={b} className="chip normal-case tracking-normal">
-            {b}
+      <article className="contents">
+        <div className="relative flex items-center justify-between">
+          <span className="font-mono text-[11px] tracking-[0.2em] text-mute">
+            0{i + 1} <span className="text-mute/50">/ 0{total}</span>
           </span>
-        ))}
-      </div>
-
-      <div className="relative mt-auto flex items-end justify-between gap-4 pt-8">
-        <div className="text-[13px] text-mute">
-          <p>
-            Linux from <span className="display text-2xl font-semibold text-bone">${vps}</span>/mo
-          </p>
-          <p className="mt-1">{rdp ? `Windows from $${rdp}/mo` : "Linux only"}</p>
+          <span
+            className={cn(
+              "chip",
+              c.family === "dedicated" ? "border-beam/30 text-beam" : "",
+            )}
+          >
+            {FAMILY_LABEL[c.family]}
+          </span>
         </div>
-        <Link
-          to={`/pricing?family=${c.family}#${c.id}`}
-          className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-sm text-bone transition-colors hover:border-white/30 hover:bg-white/[0.05]"
-        >
-          See prices
-          <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </Link>
-      </div>
-    </article>
+
+        <TiltLayer z={30} className={compact ? "mt-6" : "mt-10"}>
+          <p className="display text-[clamp(3rem,5vw,4.6rem)] font-bold leading-none tracking-[-0.06em] text-bone">
+            {h.value}
+          </p>
+          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-mute">{h.label}</p>
+        </TiltLayer>
+
+        <div className={cn("relative", compact ? "mt-6" : "mt-10")}>
+          <h3 className="display text-[2rem] font-semibold leading-none tracking-[-0.04em] text-bone">{c.name}</h3>
+          <p className="mt-1.5 text-[14px] text-beam/90">{c.tagline}</p>
+          <p className={cn("mt-4 text-[15px] leading-relaxed text-mute", compact && "hidden")}>{c.description}</p>
+        </div>
+
+        <TiltLayer z={16} className="mt-7">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-white/[0.08] pt-6 text-[14px]">
+            <div>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">vCPU</dt>
+              <dd className="mt-1 text-bone">{s.vcpu}</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Memory</dt>
+              <dd className="mt-1 text-bone">{s.ram} GB</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Storage</dt>
+              <dd className="mt-1 text-bone">
+                {s.storage} GB {s.disk}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Transfer</dt>
+              <dd className="mt-1 text-bone">{s.transfer} TB</dd>
+            </div>
+          </dl>
+        </TiltLayer>
+
+        <div className={cn("relative mt-6 flex flex-wrap gap-2", compact && "hidden")}>
+          {c.bestFor.map((b) => (
+            <span key={b} className="chip normal-case tracking-normal">
+              {b}
+            </span>
+          ))}
+        </div>
+
+        <div className="relative mt-auto flex items-end justify-between gap-4 pt-8">
+          <div className="text-[13px] text-mute">
+            <p>
+              Linux from <span className="display text-2xl font-semibold text-bone">${vps}</span>/mo
+            </p>
+            <p className="mt-1">{rdp ? `Windows from $${rdp}/mo` : "Linux only"}</p>
+          </div>
+          <Link
+            to={`/pricing?family=${c.family}#${c.id}`}
+            className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-sm text-bone transition-colors hover:border-white/30 hover:bg-white/[0.05]"
+          >
+            See prices
+            <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+      </article>
+    </Tilt>
+  );
+};
+
+const PanelSlot = ({
+  x,
+  offset,
+  vw,
+  reduce,
+  children,
+}: {
+  x: MotionValue<number>;
+  offset: number;
+  vw: number;
+  reduce: boolean;
+  children: ReactNode;
+}) => {
+  const k = (v: number) => Math.max(-1, Math.min(1, (offset + v - vw / 2) / Math.max(vw, 1)));
+  const rotateY = useTransform(x, (v) => (reduce ? 0 : k(v) * -16));
+  const z = useTransform(x, (v) => (reduce ? 0 : -Math.abs(k(v)) * 120));
+  return (
+    <motion.div data-panel className="flex" style={{ rotateY, z, transformStyle: "preserve-3d" }}>
+      {children}
+    </motion.div>
   );
 };
 
@@ -129,6 +174,9 @@ const Horizontal = () => {
   const track = useRef<HTMLDivElement>(null);
   const [dist, setDist] = useState(0);
   const [marks, setMarks] = useState<number[]>([]);
+  const [vw, setVw] = useState(() => (typeof window === "undefined" ? 1440 : window.innerWidth));
+  const [offsets, setOffsets] = useState<number[]>([]);
+  const reduce = useReducedMotion() ?? false;
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -137,9 +185,10 @@ const Horizontal = () => {
       const d = Math.max(0, el.scrollWidth - window.innerWidth);
       setDist(d);
       const pad = (el.firstElementChild as HTMLElement | null)?.offsetLeft ?? 0;
-      setMarks(
-        Array.from(el.querySelectorAll<HTMLElement>("[data-panel]")).map((p) => Math.min(d, Math.max(0, p.offsetLeft - pad))),
-      );
+      const panels = Array.from(el.querySelectorAll<HTMLElement>("[data-panel]"));
+      setMarks(panels.map((p) => Math.min(d, Math.max(0, p.offsetLeft - pad))));
+      setVw(window.innerWidth);
+      setOffsets(panels.map((p) => p.offsetLeft + p.offsetWidth / 2));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -166,15 +215,15 @@ const Horizontal = () => {
           style={{ top: (marks[i] ?? 0) + 88 }}
         />
       ))}
-      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden pt-14">
+      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden pt-14" style={{ perspective: 1800 }}>
         <div className="shell mb-8">
           <Heading compact />
         </div>
-        <motion.div ref={track} style={{ x }} className="flex h-[min(560px,62vh)] w-max gap-4 px-5 sm:px-8 lg:px-[max(2.5rem,calc((100vw_-_1320px)/2_+_2.5rem))]">
+        <motion.div ref={track} style={{ x, transformStyle: "preserve-3d" }} className="flex h-[min(560px,62vh)] w-max gap-4 px-5 sm:px-8 lg:px-[max(2.5rem,calc((100vw_-_1320px)/2_+_2.5rem))]">
           {CATEGORIES.map((c, i) => (
-            <div key={c.id} data-panel className="flex">
-              <Panel c={c} i={i} total={CATEGORIES.length} compact className="h-full w-[420px]" />
-            </div>
+            <PanelSlot key={c.id} x={x} offset={offsets[i] ?? 0} vw={vw} reduce={reduce}>
+              <Panel c={c} i={i} total={CATEGORIES.length} compact horizontal className="h-full w-[420px]" />
+            </PanelSlot>
           ))}
           <div className="flex w-[340px] flex-col justify-center rounded-[1.6rem] border border-dashed border-white/[0.12] p-8">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-mute">Not sure yet?</p>

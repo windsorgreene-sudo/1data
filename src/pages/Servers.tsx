@@ -268,6 +268,7 @@ const Servers = () => {
         title={"Seven kinds of server,\n*explained plainly.*"}
         description="Shared CPU is the value pick for most projects. Dedicated CPU reserves the cores for you. Any plan with 8 GB of memory can also run Windows."
         aside={<JumpCard />}
+        visual="stack"
       >
         <Action to="/pricing">Compare prices</Action>
         <Action to="#rdp" variant="secondary" icon="none">

@@ -98,6 +98,7 @@ export default defineConfig(({ mode }) => ({
       chunkSizeWarningLimit: 1200,
     },
     resolve: {
+    dedupe: ["three"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },

@@ -1,3 +1,4 @@
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ARCS, summarize } from "@/lib/locations";
@@ -13,6 +14,11 @@ import { Action } from "@/components/site/Action";
 export const NetworkPreview = () => {
   const locations = useLocations();
   const globe = useRef<GlobeHandle>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
+  const rotateX = useTransform(scrollYProgress, [0, 0.4], reduce ? [0, 0] : [10, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.4], [0.94, 1]);
   const [active, setActive] = useState<string | null>(null);
   const stats = useMemo(() => summarize(locations), [locations]);
   const hubs = useMemo(() => locations.filter((l) => l.hub), [locations]);
@@ -25,7 +31,7 @@ export const NetworkPreview = () => {
   };
 
   return (
-    <section className="relative overflow-hidden py-20 sm:py-28">
+    <section ref={sectionRef} className="relative overflow-hidden py-20 sm:py-28">
       <div aria-hidden className="pointer-events-none absolute right-[-20%] top-1/2 h-[900px] w-[900px] -translate-y-1/2 rounded-full bg-beam/[0.05] blur-[140px]" />
       <div className="shell relative">
         <Eyebrow label="The network" index="03" total="05" />
@@ -86,15 +92,17 @@ export const NetworkPreview = () => {
             </Reveal>
           </div>
 
-          <div className="relative lg:col-span-7">
+          <motion.div style={{ rotateX, scale, transformPerspective: 1200 }} className="relative lg:col-span-7">
             <LazyGlobe
               ref={globe}
               locations={locations}
               arcs={ARCS}
               activeCode={active}
+              tilt={scrollYProgress}
+              satellites
               className="mx-auto aspect-square w-full max-w-[720px]"
             />
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
