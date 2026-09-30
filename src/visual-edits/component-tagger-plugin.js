@@ -382,7 +382,7 @@ const getSemanticName = (node, mapContext, imageAliases) => {
 /* 🚀 Main transformation function
 ────────────────────────────────────────────────────────────── */
 function transformSource(src, filename) {
-    if (/node_modules/.test(filename) || /[\\/]components[\\/]three[\\/]scenes[\\/]/.test(filename)) {
+    if (/node_modules/.test(filename)) {
         return { code: src };
     }
 

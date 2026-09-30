@@ -2,23 +2,21 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AnimatePresence } from "framer-motion";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { lazy, Suspense, useCallback, useState } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { lazy, Suspense, useState } from "react";
+import ScrollProgress from "./components/ScrollProgress";
+import ScrollToTop from "./components/ScrollToTop";
+import SmoothScroll from "./components/SmoothScroll";
+import CursorGlow from "./components/CursorGlow";
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
-import { SiteLayout, PageLoading } from "@/components/site/SiteLayout";
-import { IntroProvider } from "@/components/site/IntroContext";
-import { Preloader } from "@/components/site/Preloader";
-import { prefersReducedMotion } from "@/lib/motion";
+import LoadingScreen from "./components/LoadingScreen";
 import Home from "./pages/Home";
+import About from "./pages/About";
+import Pricing from "./pages/Pricing";
+import ContactPage from "./pages/ContactPage";
+import SupportPage from "./pages/SupportPage";
+import TestimonialsPage from "./pages/TestimonialsPage";
 
-const Servers = lazy(() => import("./pages/Servers"));
-const Pricing = lazy(() => import("./pages/Pricing"));
-const Network = lazy(() => import("./pages/Network"));
-const About = lazy(() => import("./pages/About"));
-const SupportPage = lazy(() => import("./pages/SupportPage"));
-const ContactPage = lazy(() => import("./pages/ContactPage"));
-const TestimonialsPage = lazy(() => import("./pages/TestimonialsPage"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Portal = lazy(() => import("./pages/Portal"));
@@ -26,78 +24,55 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
-const INTRO_KEY = "beam-intro-seen";
+const PageFallback = () => (
+  <div className="fixed inset-0 bg-[#07070f] z-[9999] flex items-center justify-center">
+    <div className="flex flex-col items-center gap-4">
+      <img src="/beam-logo.svg" alt="Beam Server" className="w-14 h-14 animate-pulse drop-shadow-[0_0_18px_rgba(0,229,255,0.6)]" />
+      <div className="w-40 h-[2px] rounded-full bg-[#1a1a2e] overflow-hidden">
+        <div className="h-full w-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 animate-[shimmerMove_1.2s_linear_infinite]" />
+      </div>
+    </div>
+  </div>
+);
 
-const shouldShowIntro = () => {
-  if (typeof window === "undefined" || prefersReducedMotion()) return false;
-  if (window.location.pathname !== "/") return false;
-  try {
-    return sessionStorage.getItem(INTRO_KEY) !== "1";
-  } catch {
-    return false;
-  }
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+      <Suspense fallback={<PageFallback />}>
+        <Routes location={location}>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/testimonials" element={<TestimonialsPage />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/portal" element={<Portal />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    );
 };
 
 const App = () => {
-  const [intro, setIntro] = useState(shouldShowIntro);
-
-  const finishIntro = useCallback(() => {
-    setIntro(false);
-    try {
-      sessionStorage.setItem(INTRO_KEY, "1");
-    } catch {
-      return;
-    }
-  }, []);
+  const [loaded, setLoaded] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Sonner position="bottom-center" theme="dark" />
+        <Sonner />
         <HoverReceiver />
-        <AnimatePresence>{intro && <Preloader key="intro" onDone={finishIntro} />}</AnimatePresence>
-        <IntroProvider ready={!intro}>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<SiteLayout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/servers" element={<Servers />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/network" element={<Network />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/support" element={<SupportPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/testimonials" element={<TestimonialsPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-              <Route
-                path="/auth"
-                element={
-                  <Suspense fallback={<PageLoading />}>
-                    <Auth />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/portal"
-                element={
-                  <Suspense fallback={<PageLoading />}>
-                    <Portal />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <Suspense fallback={<PageLoading />}>
-                    <Admin />
-                  </Suspense>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-        </IntroProvider>
+        {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
+        <BrowserRouter>
+          <CursorGlow />
+          <SmoothScroll />
+          <ScrollProgress />
+          <AnimatedRoutes />
+          <ScrollToTop />
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
