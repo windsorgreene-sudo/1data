@@ -207,7 +207,7 @@ export const Invoices = () => {
                       {format(new Date(invoice.due_at), "MMM dd, yyyy")}
                     </TableCell>
                     <TableCell className="text-muted-foreground hidden xl:table-cell">
-                      {invoice.paid_at ? format(new Date(invoice.paid_at), "MMM dd, yyyy") : "—"}
+                      {invoice.paid_at ? format(new Date(invoice.paid_at), "MMM dd, yyyy") : "Not paid"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">

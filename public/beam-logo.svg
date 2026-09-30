@@ -1,11 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32" fill="none">
   <defs>
-    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00e5ff"/>
-      <stop offset="100%" stop-color="#a855f7"/>
+    <linearGradient id="ray" x1="16" y1="0" x2="30" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7fe6f5"/>
+      <stop offset="0.7" stop-color="#6adff2" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#6adff2" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <polygon points="30,2 55,16 55,44 30,58 5,44 5,16" fill="url(#hexGrad)" opacity="0.15"/>
-  <polygon points="30,2 55,16 55,44 30,58 5,44 5,16" fill="none" stroke="url(#hexGrad)" stroke-width="2"/>
-  <text x="30" y="40" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="700" font-size="26" fill="url(#hexGrad)">B</text>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="9" fill="#14161b" stroke="#ffffff" stroke-opacity="0.14"/>
+  <path d="M10.6 7.2v17.2" stroke="#efece6" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="16" cy="19" r="5.1" stroke="#efece6" stroke-width="3"/>
+  <path d="M16 19h13" stroke="url(#ray)" stroke-width="1.7" stroke-linecap="round"/>
+  <circle cx="16" cy="19" r="1.25" fill="#7fe6f5"/>
 </svg>

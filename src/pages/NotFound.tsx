@@ -1,34 +1,36 @@
-import { useLocation, Link } from "react-router-dom";
-import { useEffect } from "react";
-import PageTransition from "@/components/PageTransition";
-import { Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { MeshGrid } from "@/components/fx/MeshGrid";
+import { Scramble } from "@/components/motion/Scramble";
+import { Reveal } from "@/components/motion/Reveal";
+import { Action } from "@/components/site/Action";
 
 const NotFound = () => {
   const location = useLocation();
-
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
+  usePageMeta("Page not found");
 
   return (
-    <PageTransition>
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="text-8xl font-bold bg-text-gradient bg-clip-text text-transparent mb-4">404</h1>
-          <p className="text-xl text-muted-foreground mb-8">Oops! Page not found</p>
-          <Button asChild className="bg-gradient-primary hover:shadow-glow">
-            <Link to="/">
-              <Home className="w-4 h-4 mr-2" />
-              Return to Home
-            </Link>
-          </Button>
-        </div>
+    <section className="grain relative flex min-h-[100svh] items-center overflow-hidden">
+      <MeshGrid className="absolute inset-0 opacity-80 mask-radial" />
+      <div className="shell relative py-32 text-center">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-beam">
+          <Scramble text="Error 404 · route not found" trigger="view" />
+        </p>
+        <h1 className="display mt-6 text-[clamp(7rem,26vw,20rem)] font-bold leading-[0.8] tracking-[-0.07em] text-gradient-beam">
+          404
+        </h1>
+        <Reveal delay={0.2} className="mx-auto mt-8 max-w-md text-[17px] leading-relaxed text-mute">
+          Nothing lives at <span className="font-mono text-bone">{location.pathname}</span>. It may have moved, or the
+          link had a typo.
+        </Reveal>
+        <Reveal delay={0.3} className="mt-10 flex flex-wrap justify-center gap-3">
+          <Action to="/">Back to home</Action>
+          <Action to="/pricing" variant="secondary">
+            See pricing
+          </Action>
+        </Reveal>
       </div>
-    </PageTransition>
+    </section>
   );
 };
 
